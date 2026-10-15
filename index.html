@@ -38,9 +38,41 @@ label small{font-weight:400;color:var(--muted);font-size:13px}
 input,select{font:500 20px var(--f-mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px 12px;width:100%;font-variant-numeric:tabular-nums}
 select{font:600 15px var(--f-body)}
 input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
-details{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
-summary{cursor:pointer;font-weight:600;color:var(--accent)}
-details .grid{margin-top:14px}
+.weights{margin-top:20px;border-top:1px solid var(--line);padding-top:18px;display:grid;gap:14px}
+.weights h3{margin:0 0 4px;font-size:16px}
+.weights p{margin:0;color:var(--muted);font-size:14px;max-width:68ch}
+.weights .wsum{color:var(--ink);font-size:14px;background:var(--accent-soft);border-radius:6px;padding:8px 12px;justify-self:start}
+.combo{display:grid;gap:18px}
+.combo .sec{margin-bottom:4px}
+.sub{margin:0;color:var(--muted);font-size:15px;max-width:68ch}
+.cbody{display:grid;gap:16px}
+.slider-label{display:grid;gap:8px}
+input[type=range]{padding:0;border:0;background:transparent;accent-color:var(--accent);height:28px;cursor:pointer}
+.pick{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;background:var(--accent-soft);border-radius:8px;padding:14px 16px}
+.pick .big{font:500 22px var(--f-mono);font-variant-numeric:tabular-nums}
+.pick .big b{color:var(--accent);font-weight:500}
+.pick .small{color:var(--muted);font-size:14px}
+.chart-wrap{position:relative;min-width:0}
+#chart{width:100%;height:auto;display:block;touch-action:pan-y}
+#chart text{font:12px var(--f-body);fill:var(--muted)}
+#chart .axis-title{font-weight:600;fill:var(--ink)}
+#chart .grid-l{stroke:var(--line);stroke-width:1}
+#chart .zone{fill:var(--accent-soft)}
+#chart .zone-label{font-weight:600;fill:var(--accent)}
+#chart .front{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round}
+#chart .dot{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+#chart .sel{fill:var(--surface);stroke:var(--accent);stroke-width:3}
+#chart .guide{stroke:var(--accent);stroke-width:1;stroke-dasharray:3 3}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--surface);font-size:13px;padding:6px 10px;border-radius:6px;white-space:nowrap;transform:translate(-50%,-100%);margin-top:-12px}
+table.combos th{text-align:right;font-size:13px;font-weight:600;color:var(--muted);padding:6px 0 8px 12px;border-bottom:1px solid var(--line);vertical-align:bottom}
+table.combos th:first-child{text-align:left;padding-left:0}
+table.combos th small{display:block;font-weight:400}
+table.combos td{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;padding-left:12px}
+table.combos td:first-child{text-align:left;padding-left:0}
+table.combos tbody tr{cursor:pointer}
+table.combos tbody tr:hover td{background:var(--bg)}
+table.combos tr.on td{color:var(--accent);font-weight:500}
+.badge{font:600 11px var(--f-body);color:var(--ok);background:var(--ok-soft);border-radius:99px;padding:2px 8px;margin-left:6px;letter-spacing:.02em}
 .verdict{border-radius:10px;padding:20px;display:grid;gap:6px;border:1px solid transparent}
 .verdict.ok{background:var(--ok-soft);border-color:var(--ok)}
 .verdict.bad{background:var(--bad-soft);border-color:var(--bad)}
@@ -95,25 +127,29 @@ td small{display:block;color:var(--muted);font-size:13px}
         <input id="total" type="number" min="0" step="1" inputmode="numeric" value="600">
       </label>
       <label for="integrais">Bolsas integrais (100%)
-        <input id="integrais" type="number" min="0" step="1" inputmode="numeric" value="62">
+        <input id="integrais" type="number" min="0" step="1" inputmode="numeric" value="60">
       </label>
       <label for="parciais">Bolsas parciais (50%)
-        <input id="parciais" type="number" min="0" step="1" inputmode="numeric" value="90">
+        <input id="parciais" type="number" min="0" step="1" inputmode="numeric" value="80">
       </label>
     </div>
-    <details>
-      <summary>Bolsas integrais com peso maior (opcional)</summary>
+    <div class="weights">
+      <div>
+        <h3>Das bolsas integrais informadas, quantas têm peso maior?</h3>
+        <p>Por padrão, cada bolsa integral conta como 1. Só informe aqui as integrais que se encaixam nos casos abaixo. Se nenhuma se encaixar, deixe 0.</p>
+      </div>
       <div class="grid">
         <label for="defic">Integrais a alunos com deficiência
-          <small>Cada uma vale 1,2 bolsa integral (Censo Escolar)</small>
+          <small>Cada uma vale 1,2 integral · aluno declarado no Censo Escolar</small>
           <input id="defic" type="number" min="0" step="1" inputmode="numeric" value="0">
         </label>
-        <label for="tempo">Integrais em tempo integral
-          <small>Cada uma vale 1,4 bolsa integral</small>
+        <label for="tempo">Integrais a alunos em tempo integral
+          <small>Cada uma vale 1,4 integral · matrícula em jornada de tempo integral</small>
           <input id="tempo" type="number" min="0" step="1" inputmode="numeric" value="0">
         </label>
       </div>
-    </details>
+      <p class="wsum" id="wsum"></p>
+    </div>
     <p class="err" id="err" hidden></p>
   </section>
 
@@ -138,6 +174,29 @@ td small{display:block;color:var(--muted);font-size:13px}
     </article>
   </section>
 
+  <section class="panel combo" id="combo">
+    <div>
+      <h2 class="sec">Como completar a proporção</h2>
+      <p class="sub" id="csub"></p>
+    </div>
+    <div class="cbody" id="cbody">
+      <label for="slider" class="slider-label">Bolsas integrais a mais
+        <input type="range" id="slider" min="0" max="10" step="1" value="0">
+      </label>
+      <div class="pick" id="pick"></div>
+      <div class="chart-wrap" id="chartwrap">
+        <svg id="chart" viewBox="0 0 640 280" role="img" aria-label="Combinações de bolsas integrais e parciais que fecham a proporção"></svg>
+        <div class="tip" id="tip" hidden></div>
+      </div>
+      <div class="table-wrap">
+        <table class="combos">
+          <thead><tr><th>Integrais a mais</th><th>Parciais a mais</th><th>Bolsas novas</th><th>Custo em integrais<small>parcial = 0,5</small></th></tr></thead>
+          <tbody id="ctable"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <section class="panel">
     <h2 class="sec">Memória de cálculo</h2>
     <div class="table-wrap"><table><tbody id="memo"></tbody></table></div>
@@ -154,14 +213,15 @@ td small{display:block;color:var(--muted);font-size:13px}
 const $ = id => document.getElementById(id);
 const fmt = (n, d=2) => n.toLocaleString('pt-BR', {minimumFractionDigits: Number.isInteger(n)?0:d, maximumFractionDigits: d});
 const num = id => { const v = Math.floor(Number($(id).value)); return Number.isFinite(v) && v > 0 ? v : 0; };
+const pl = (n, s, p) => n === 1 ? s : p;
+
+let combos = [], selK = null, rangeKey = '';
 
 function evaluate(T, I, P, D, Tm, R){
   const pag = T - I;
-  const eqInt = I + D*0.2 + Tm*0.4;          // integrais ponderadas
-  const eq = eqInt + P/2;                     // equivalente total
-  const ok1 = I*9 >= pag;
-  const ok2 = eq*R >= pag - 1e-9;
-  return {pag, eqInt, eq, ok1, ok2, req1: pag/9, req2: pag/R};
+  const eqInt = I + D*0.2 + Tm*0.4;
+  const eq = eqInt + P/2;
+  return {pag, eqInt, eq, ok1: I*9 >= pag, ok2: eq*R >= pag - 1e-9, req1: pag/9, req2: pag/R};
 }
 
 function render(){
@@ -170,22 +230,24 @@ function render(){
   const err = [];
   if (I > T) err.push('O número de bolsas integrais não pode passar do total de alunos.');
   if (I + P > T) err.push('Integrais e parciais somadas passam do total de alunos.');
-  if (D + Tm > I) err.push('As integrais com peso maior devem fazer parte das integrais informadas.');
+  if (D + Tm > I) err.push('As integrais com peso maior fazem parte das integrais informadas, então não podem passar delas. Os pesos foram ignorados.');
   $('err').hidden = !err.length; $('err').textContent = err.join(' ');
   if (D + Tm > I) { D = 0; Tm = 0; }
 
   const e = evaluate(T, I, P, D, Tm, R);
   $('h2').textContent = `Proporção total (1 : ${R})`;
 
+  $('wsum').innerHTML = (D || Tm)
+    ? `As ${I} integrais passam a valer <b>${fmt(e.eqInt)}</b> na proporção total (${I - D - Tm} × 1 + ${D} × 1,2 + ${Tm} × 1,4).`
+    : `Nenhuma integral com peso maior: as ${I} integrais contam como <b>${I}</b>.`;
+
   // Teste 1
-  const need1 = Math.max(0, Math.ceil(e.req1) - I) ;
-  // menor k tal que (I+k)*9 >= T-(I+k)
   let k1 = 0; while ((I+k1)*9 < T-(I+k1)) k1++;
   set('p1','b1', e.ok1, e.req1 ? I/e.req1 : 1);
   $('r1').innerHTML = `${I} <span>de ${fmt(e.req1)} exigidas</span>`;
   $('t1').innerHTML = e.ok1
     ? `Cumpre. Sobram <b>${fmt(I - e.req1)}</b> integrais acima do mínimo.`
-    : `Faltam <b>${k1}</b> bolsa${k1>1?'s':''} integral${k1>1?'is':''} para chegar a 1 a cada 9 pagantes.`;
+    : `Faltam <b>${k1}</b> ${pl(k1,'bolsa integral','bolsas integrais')} para chegar a 1 a cada 9 pagantes.`;
 
   // Teste 2
   set('p2','b2', e.ok2, e.req2 ? e.eq/e.req2 : 1);
@@ -194,7 +256,7 @@ function render(){
   let ki = 0; while ((e.eqInt + ki + P/2)*R < (e.pag - ki) - 1e-9) ki++;
   $('t2').innerHTML = e.ok2
     ? `Cumpre. Sobram <b>${fmt(e.eq - e.req2)}</b> bolsas equivalentes.`
-    : `Faltam <b>${kp}</b> parciais <i>ou</i> <b>${ki}</b> integrais (integrais também reduzem o número de pagantes).`;
+    : `Faltam <b>${kp}</b> parciais, <b>${ki}</b> integrais ou uma combinação dos dois.`;
 
   // Veredito
   const v = $('verdict'), ok = e.ok1 && e.ok2;
@@ -203,24 +265,144 @@ function render(){
   $('vtitle').textContent = ok ? 'A instituição atende às proporções do CEBAS' : 'A instituição ainda não atende às proporções';
   let txt;
   if (ok) txt = `Com ${e.pag} alunos pagantes, as ${I} integrais e ${P} parciais cumprem o mínimo de 1 : 9 e a proporção de 1 : ${R}.`;
-  else if (!e.ok1 && !e.ok2) txt = `Não cumpre nenhum dos dois testes. Comece pelas integrais: faltam ${k1} para o mínimo de 1 : 9.`;
-  else if (!e.ok1) txt = `A proporção total foi atingida, mas há poucas integrais. Parciais não substituem o mínimo de 1 integral para cada 9 pagantes.`;
-  else txt = `O mínimo de integrais está cumprido. Complete com ${kp} bolsas parciais ou ${ki} integrais.`;
+  else if (!e.ok1 && !e.ok2) txt = `Não cumpre nenhum dos dois testes. São necessárias pelo menos ${k1} integrais a mais para o mínimo de 1 : 9. Veja abaixo as combinações que resolvem os dois.`;
+  else if (!e.ok1) txt = `A proporção total foi atingida, mas há poucas integrais. Parciais não substituem o mínimo de 1 integral para cada 9 pagantes: faltam ${k1} integrais.`;
+  else txt = `O mínimo de integrais está cumprido. Veja abaixo as combinações de integrais e parciais que fecham a proporção.`;
   $('vtext').textContent = txt;
+
+  // Combinações
+  const kmin = e.ok1 ? 0 : k1, kmax = Math.max(kmin, ki);
+  combos = [];
+  if (!ok) for (let k = kmin; k <= kmax; k++){
+    const pag = T - I - k;
+    let p = Math.ceil(2*(pag/R - e.eqInt - k) - P - 1e-9);
+    p = Math.max(0, p);
+    if (I + k + P + p > T) continue;
+    combos.push({k, p, pag, n: k + p, cost: k + p/2});
+  }
+  renderCombos(ok, e, I, P, R, k1);
 
   // Memória
   const rows = [
     ['Total de alunos matriculados', '', T],
     ['Alunos pagantes', `${T} − ${I} integrais`, e.pag],
     ['Integrais exigidas no mínimo', `${e.pag} ÷ 9`, fmt(e.req1)],
-    [`Bolsas equivalentes exigidas`, `${e.pag} ÷ ${R}`, fmt(e.req2)],
-    ['Integrais ponderadas', D||Tm ? `${I} + ${D} × 0,2 + ${Tm} × 0,4` : 'sem pesos adicionais', fmt(e.eqInt)],
+    ['Bolsas equivalentes exigidas', `${e.pag} ÷ ${R}`, fmt(e.req2)],
+    ['Integrais ponderadas', D||Tm ? `${I - D - Tm} + ${D} × 1,2 + ${Tm} × 1,4` : 'sem pesos adicionais', fmt(e.eqInt)],
     ['Parciais em equivalente integral', `${P} ÷ 2`, fmt(P/2)],
     ['Bolsas equivalentes concedidas', 'integrais ponderadas + parciais ÷ 2', fmt(e.eq)],
     ['Proporção atual', 'pagantes por bolsa equivalente', e.eq ? `1 : ${fmt(e.pag/e.eq)}` : '—'],
   ];
   $('memo').innerHTML = rows.map(([a,b,c]) => `<tr><td>${a}${b?`<small>${b}</small>`:''}</td><td>${c}</td></tr>`).join('');
 }
+
+function renderCombos(ok, e, I, P, R, k1){
+  const body = $('cbody');
+  if (ok){
+    $('csub').textContent = 'A instituição já cumpre as duas proporções. Não é preciso conceder bolsas adicionais.';
+    body.hidden = true; return;
+  }
+  if (!combos.length){
+    $('csub').textContent = 'Não há combinação possível com esse total de alunos. Revise os números informados.';
+    body.hidden = true; return;
+  }
+  body.hidden = false;
+  const first = combos[0], last = combos[combos.length-1];
+  let sub = `Cada ponto da linha é uma combinação que fecha a proporção. Quanto mais integrais novas, menos parciais são necessárias, porque cada integral também tira um aluno da conta de pagantes.`;
+  if (!e.ok1) sub += ` A linha começa em ${k1} integrais a mais, o mínimo para cumprir 1 : 9.`;
+  $('csub').textContent = sub;
+
+  const key = `${first.k}-${last.k}-${first.p}`;
+  if (key !== rangeKey){ rangeKey = key; selK = combos[Math.floor(combos.length/2)].k; }
+  selK = Math.min(last.k, Math.max(first.k, selK));
+  const s = $('slider');
+  s.min = first.k; s.max = last.k; s.value = selK;
+  s.disabled = combos.length < 2;
+  drawSelection();
+}
+
+function comboAt(k){ return combos.find(c => c.k === k) || combos[0]; }
+function cheapest(){ return combos.reduce((a,b) => (b.cost < a.cost - 1e-9 || (Math.abs(b.cost-a.cost)<1e-9 && b.n < a.n)) ? b : a); }
+
+function drawSelection(){
+  const c = comboAt(selK), I = num('integrais'), P = num('parciais');
+  $('pick').innerHTML = `<span class="big"><b>+${c.k}</b> ${pl(c.k,'integral','integrais')} e <b>+${c.p}</b> ${pl(c.p,'parcial','parciais')}</span>
+    <span class="small">Ficam ${I + c.k} integrais e ${P + c.p} parciais para ${c.pag} pagantes · custo equivalente a ${fmt(c.cost,1)} integrais</span>`;
+  drawChart();
+  drawTable();
+}
+
+function niceStep(raw){
+  const p = Math.pow(10, Math.floor(Math.log10(raw || 1))), f = raw / p;
+  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+}
+
+function drawChart(){
+  const W = 640, H = 280, m = {l:52, r:20, t:18, b:48};
+  const k0 = combos[0].k, k1 = combos[combos.length-1].k, span = Math.max(1, k1 - k0);
+  const pMax = Math.max(...combos.map(c => c.p), 1);
+  const yStep = niceStep(pMax/4), yTop = Math.ceil(pMax / yStep) * yStep;
+  const X = k => m.l + (k - k0) / span * (W - m.l - m.r);
+  const Y = p => H - m.b - p / yTop * (H - m.t - m.b);
+  let g = '';
+  for (let v = 0; v <= yTop + 1e-9; v += yStep){
+    g += `<line class="grid-l" x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${m.l-8}" y="${Y(v)+4}" text-anchor="end">${fmt(v,0)}</text>`;
+  }
+  const xStep = Math.max(1, niceStep(span/6));
+  for (let v = Math.ceil(k0/xStep)*xStep; v <= k1; v += xStep){
+    g += `<text x="${X(v)}" y="${H-m.b+18}" text-anchor="middle">${v}</text>`;
+  }
+  const pts = combos.map(c => `${X(c.k)},${Y(c.p)}`).join(' ');
+  const zone = `M${X(k0)},${m.t} L${pts.split(' ').join(' L')} L${X(k1)},${m.t} Z`;
+  const sel = comboAt(selK);
+  const dots = combos.length <= 40 ? combos.map(c => `<circle class="dot" cx="${X(c.k)}" cy="${Y(c.p)}" r="4"/>`).join('') : '';
+  $('chart').innerHTML = `
+    <path class="zone" d="${zone}"/>
+    ${g}
+    <text class="zone-label" x="${W-m.r-8}" y="${m.t+20}" text-anchor="end">Cumpre a proporção</text>
+    <text x="${m.l+10}" y="${H-m.b-10}">Não cumpre</text>
+    <polyline class="front" points="${pts}"/>
+    ${dots}
+    <line class="guide" x1="${X(sel.k)}" x2="${X(sel.k)}" y1="${Y(sel.p)}" y2="${H-m.b}"/>
+    <line class="guide" x1="${m.l}" x2="${X(sel.k)}" y1="${Y(sel.p)}" y2="${Y(sel.p)}"/>
+    <circle class="sel" cx="${X(sel.k)}" cy="${Y(sel.p)}" r="7"/>
+    <text class="axis-title" x="${(m.l + W - m.r)/2}" y="${H-8}" text-anchor="middle">Bolsas integrais a mais</text>
+    <text class="axis-title" transform="translate(14 ${(m.t + H - m.b)/2}) rotate(-90)" text-anchor="middle">Bolsas parciais a mais</text>`;
+  drawChart.geo = {W, m, k0, span, X, Y};
+}
+
+function drawTable(){
+  const n = combos.length, idx = new Set();
+  if (n <= 10) combos.forEach((_, i) => idx.add(i));
+  else for (let j = 0; j < 8; j++) idx.add(Math.round(j*(n-1)/7));
+  const si = combos.findIndex(c => c.k === selK); idx.add(si);
+  const best = cheapest();
+  $('ctable').innerHTML = [...idx].sort((a,b)=>a-b).map(i => {
+    const c = combos[i];
+    return `<tr data-k="${c.k}" class="${c.k===selK?'on':''}"><td>+${c.k}</td><td>+${c.p}</td><td>${c.n}</td><td>${fmt(c.cost,1)}${c===best?'<span class="badge">menor custo</span>':''}</td></tr>`;
+  }).join('');
+}
+
+function kFromEvent(ev){
+  const g = drawChart.geo, r = $('chart').getBoundingClientRect();
+  const x = (ev.clientX - r.left) * g.W / r.width;
+  const k = Math.round(g.k0 + (x - g.m.l) / (g.W - g.m.l - g.m.r) * g.span);
+  return Math.min(combos[combos.length-1].k, Math.max(combos[0].k, k));
+}
+
+$('chart').addEventListener('pointermove', ev => {
+  if (!combos.length) return;
+  const c = comboAt(kFromEvent(ev)), g = drawChart.geo, r = $('chart').getBoundingClientRect();
+  const tip = $('tip');
+  tip.textContent = `+${c.k} ${pl(c.k,'integral','integrais')} e +${c.p} ${pl(c.p,'parcial','parciais')}`;
+  tip.style.left = (g.X(c.k) * r.width / g.W) + 'px';
+  tip.style.top = (g.Y(c.p) * r.width / g.W) + 'px';
+  tip.hidden = false;
+});
+$('chart').addEventListener('pointerleave', () => { $('tip').hidden = true; });
+$('chart').addEventListener('click', ev => { if (!combos.length) return; selK = kFromEvent(ev); $('slider').value = selK; drawSelection(); });
+$('slider').addEventListener('input', () => { selK = Number($('slider').value); drawSelection(); });
+$('ctable').addEventListener('click', ev => { const tr = ev.target.closest('tr'); if (!tr) return; selK = Number(tr.dataset.k); $('slider').value = selK; drawSelection(); });
 
 function set(pill, bar, ok, frac){
   $(pill).className = 'pill ' + (ok?'ok':'bad');
