@@ -103,6 +103,9 @@ td small{display:block;color:var(--muted);font-size:13px}
 .notes{color:var(--muted);font-size:14px;display:grid;gap:8px}
 .notes p{margin:0;max-width:70ch}
 .err{color:var(--bad);font-size:14px;margin:12px 0 0}
+.verdict.idle{background:var(--surface);border-color:var(--line)}
+.verdict.idle .tag{color:var(--muted)}
+.pill.idle{background:var(--bg);color:var(--muted)}
 @media (prefers-reduced-motion: reduce){.bar i{transition:none}}
 </style>
 </head>
@@ -124,13 +127,13 @@ td small{display:block;color:var(--muted);font-size:13px}
         </select>
       </label>
       <label for="total">Total de alunos matriculados
-        <input id="total" type="number" min="0" step="1" inputmode="numeric" value="600">
+        <input id="total" type="number" min="0" step="1" inputmode="numeric" value="0">
       </label>
       <label for="integrais">Bolsas integrais (100%)
-        <input id="integrais" type="number" min="0" step="1" inputmode="numeric" value="60">
+        <input id="integrais" type="number" min="0" step="1" inputmode="numeric" value="0">
       </label>
       <label for="parciais">Bolsas parciais (50%)
-        <input id="parciais" type="number" min="0" step="1" inputmode="numeric" value="80">
+        <input id="parciais" type="number" min="0" step="1" inputmode="numeric" value="0">
       </label>
     </div>
     <div class="weights">
@@ -215,7 +218,25 @@ const fmt = (n, d=2) => n.toLocaleString('pt-BR', {minimumFractionDigits: Number
 const num = id => { const v = Math.floor(Number($(id).value)); return Number.isFinite(v) && v > 0 ? v : 0; };
 const pl = (n, s, p) => n === 1 ? s : p;
 
-let combos = [], selK = null, rangeKey = '';
+let combos = [], selK = null, rangeKey = '', restoreSel = null;
+const FIELDS = ['nivel','total','integrais','parciais','defic','tempo'];
+const STORE = 'cebas-calc-v1';
+
+function save(){
+  try {
+    const data = Object.fromEntries(FIELDS.map(id => [id, $(id).value]));
+    data.selK = selK;
+    localStorage.setItem(STORE, JSON.stringify(data));
+  } catch (e) {}
+}
+function load(){
+  try {
+    const data = JSON.parse(localStorage.getItem(STORE) || 'null');
+    if (!data) return;
+    FIELDS.forEach(id => { if (data[id] != null) $(id).value = data[id]; });
+    if (Number.isFinite(data.selK)) restoreSel = data.selK;
+  } catch (e) {}
+}
 
 function evaluate(T, I, P, D, Tm, R){
   const pag = T - I;
@@ -280,7 +301,7 @@ function render(){
     if (I + k + P + p > T) continue;
     combos.push({k, p, pag, n: k + p, cost: k + p/2});
   }
-  renderCombos(ok, e, I, P, R, k1);
+  if (T === 0) idle(); else renderCombos(ok, e, I, P, R, k1);
 
   // Memória
   const rows = [
@@ -313,12 +334,28 @@ function renderCombos(ok, e, I, P, R, k1){
   $('csub').textContent = sub;
 
   const key = `${first.k}-${last.k}-${first.p}`;
-  if (key !== rangeKey){ rangeKey = key; selK = combos[Math.floor(combos.length/2)].k; }
+  if (key !== rangeKey){
+    rangeKey = key;
+    selK = restoreSel != null ? restoreSel : combos[Math.floor(combos.length/2)].k;
+    restoreSel = null;
+  }
   selK = Math.min(last.k, Math.max(first.k, selK));
   const s = $('slider');
   s.min = first.k; s.max = last.k; s.value = selK;
   s.disabled = combos.length < 2;
   drawSelection();
+}
+
+function idle(){
+  $('verdict').className = 'verdict idle';
+  $('vtag').textContent = 'Aguardando dados';
+  $('vtitle').textContent = 'Informe o total de alunos para ver o resultado';
+  $('vtext').textContent = 'Preencha também as bolsas integrais e parciais concedidas. O resultado aparece assim que você digitar.';
+  ['p1','p2'].forEach(id => { $(id).className = 'pill idle'; $(id).textContent = 'Sem dados'; });
+  ['b1','b2'].forEach(id => { $(id).className = 'bar'; $(id).firstElementChild.style.width = '0%'; });
+  $('t1').textContent = ''; $('t2').textContent = '';
+  $('csub').textContent = 'Quando a instituição não se enquadrar, aqui aparecem as combinações de bolsas integrais e parciais que fecham a proporção.';
+  $('cbody').hidden = true;
 }
 
 function comboAt(k){ return combos.find(c => c.k === k) || combos[0]; }
@@ -330,6 +367,7 @@ function drawSelection(){
     <span class="small">Ficam ${I + c.k} integrais e ${P + c.p} parciais para ${c.pag} pagantes · custo equivalente a ${fmt(c.cost,1)} integrais</span>`;
   drawChart();
   drawTable();
+  save();
 }
 
 function niceStep(raw){
@@ -411,7 +449,8 @@ function set(pill, bar, ok, frac){
   $(bar).firstElementChild.style.width = Math.min(100, Math.max(0, frac*100)) + '%';
 }
 
-['nivel','total','integrais','parciais','defic','tempo'].forEach(id => $(id).addEventListener('input', render));
+FIELDS.forEach(id => $(id).addEventListener('input', () => { render(); save(); }));
+load();
 render();
 </script>
 </body>
