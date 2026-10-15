@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora de Bolsas CEBAS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: coluna estreita — formulário em cima, veredito e dois testes legais (1:9 e 1:5) logo abaixo, memória de cálculo no fim */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --ink:#18231f; --muted:#5d6b66; --line:#d6dedb;
+  --accent:#1f6b57; --accent-soft:#e2efea;
+  --ok:#1d7a45; --ok-soft:#e1f2e7; --bad:#b4361f; --bad-soft:#f8e4df; --warn:#9a6a0b;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111816; --surface:#18211e; --ink:#e4ece9; --muted:#97a7a1; --line:#2c3935;
+  --accent:#62c1a3; --accent-soft:#1d3029;
+  --ok:#5fd08e; --ok-soft:#173023; --bad:#f08a72; --bad-soft:#3a1f19; --warn:#e2b04f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111816; --surface:#18211e; --ink:#e4ece9; --muted:#97a7a1; --line:#2c3935;
+  --accent:#62c1a3; --accent-soft:#1d3029;
+  --ok:#5fd08e; --ok-soft:#173023; --bad:#f08a72; --bad-soft:#3a1f19; --warn:#e2b04f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+.wrap{max-width:760px;margin:0 auto;padding:32px 16px 48px;display:grid;gap:24px}
+header{display:grid;gap:6px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font-family:var(--f-display);font-size:clamp(28px,5vw,38px);line-height:1.1;margin:0;text-wrap:balance}
+.lede{color:var(--muted);margin:0;max-width:62ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
+label{display:grid;gap:6px;font-weight:600;font-size:15px}
+label small{font-weight:400;color:var(--muted);font-size:13px}
+input,select{font:500 20px var(--f-mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px 12px;width:100%;font-variant-numeric:tabular-nums}
+select{font:600 15px var(--f-body)}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
+details{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+summary{cursor:pointer;font-weight:600;color:var(--accent)}
+details .grid{margin-top:14px}
+.verdict{border-radius:10px;padding:20px;display:grid;gap:6px;border:1px solid transparent}
+.verdict.ok{background:var(--ok-soft);border-color:var(--ok)}
+.verdict.bad{background:var(--bad-soft);border-color:var(--bad)}
+.verdict .tag{font:600 12px var(--f-body);letter-spacing:.08em;text-transform:uppercase}
+.verdict.ok .tag{color:var(--ok)} .verdict.bad .tag{color:var(--bad)}
+.verdict h2{font-family:var(--f-display);font-size:24px;margin:0;line-height:1.2}
+.verdict p{margin:0}
+.tests{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.test{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:10px;min-width:0}
+.test-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.test-head h3{margin:0;font-size:16px}
+.pill{font:600 12px var(--f-body);padding:3px 10px;border-radius:99px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+.ratio{font:500 28px var(--f-mono);font-variant-numeric:tabular-nums}
+.ratio span{font-size:15px;color:var(--muted)}
+.bar{height:8px;background:var(--bg);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:var(--ok);border-radius:99px;transition:width .3s}
+.bar.bad i{background:var(--bad)}
+.test p{margin:0;color:var(--muted);font-size:14px}
+.test p b{color:var(--ink)}
+h2.sec{font-family:var(--f-display);font-size:20px;margin:0 0 12px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px}
+td{padding:8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td:last-child{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;padding-left:12px;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td small{display:block;color:var(--muted);font-size:13px}
+.notes{color:var(--muted);font-size:14px;display:grid;gap:8px}
+.notes p{margin:0;max-width:70ch}
+.err{color:var(--bad);font-size:14px;margin:12px 0 0}
+@media (prefers-reduced-motion: reduce){.bar i{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">CEBAS · Lei Complementar 187/2021</div>
+    <h1>Calculadora de Bolsas CEBAS</h1>
+    <p class="lede">Informe o total de alunos e as bolsas concedidas. A calculadora verifica as duas proporções exigidas e mostra quanto falta, se faltar.</p>
+  </header>
+
+  <section class="panel" aria-label="Dados da instituição">
+    <div class="grid">
+      <label for="nivel">Nível de ensino
+        <select id="nivel">
+          <option value="5">Educação básica (1 integral : 5 pagantes)</option>
+          <option value="4">Ensino superior com Prouni (1 integral : 4 pagantes)</option>
+        </select>
+      </label>
+      <label for="total">Total de alunos matriculados
+        <input id="total" type="number" min="0" step="1" inputmode="numeric" value="600">
+      </label>
+      <label for="integrais">Bolsas integrais (100%)
+        <input id="integrais" type="number" min="0" step="1" inputmode="numeric" value="62">
+      </label>
+      <label for="parciais">Bolsas parciais (50%)
+        <input id="parciais" type="number" min="0" step="1" inputmode="numeric" value="90">
+      </label>
+    </div>
+    <details>
+      <summary>Bolsas integrais com peso maior (opcional)</summary>
+      <div class="grid">
+        <label for="defic">Integrais a alunos com deficiência
+          <small>Cada uma vale 1,2 bolsa integral (Censo Escolar)</small>
+          <input id="defic" type="number" min="0" step="1" inputmode="numeric" value="0">
+        </label>
+        <label for="tempo">Integrais em tempo integral
+          <small>Cada uma vale 1,4 bolsa integral</small>
+          <input id="tempo" type="number" min="0" step="1" inputmode="numeric" value="0">
+        </label>
+      </div>
+    </details>
+    <p class="err" id="err" hidden></p>
+  </section>
+
+  <section class="verdict" id="verdict" aria-live="polite">
+    <div class="tag" id="vtag"></div>
+    <h2 id="vtitle"></h2>
+    <p id="vtext"></p>
+  </section>
+
+  <section class="tests">
+    <article class="test">
+      <div class="test-head"><h3>Mínimo de integrais (1 : 9)</h3><span class="pill" id="p1"></span></div>
+      <div class="ratio" id="r1"></div>
+      <div class="bar" id="b1"><i></i></div>
+      <p id="t1"></p>
+    </article>
+    <article class="test">
+      <div class="test-head"><h3 id="h2">Proporção total (1 : 5)</h3><span class="pill" id="p2"></span></div>
+      <div class="ratio" id="r2"></div>
+      <div class="bar" id="b2"><i></i></div>
+      <p id="t2"></p>
+    </article>
+  </section>
+
+  <section class="panel">
+    <h2 class="sec">Memória de cálculo</h2>
+    <div class="table-wrap"><table><tbody id="memo"></tbody></table></div>
+  </section>
+
+  <section class="notes">
+    <p><b>Regra aplicada (art. 20, LC 187/2021, educação básica):</b> 1 bolsa integral para cada 5 alunos pagantes. A proporção pode ser completada com bolsas parciais de 50%, desde que haja no mínimo 1 integral para cada 9 pagantes; 2 parciais equivalem a 1 integral. No ensino superior com Prouni (art. 22) a proporção é 1 para 4, mantido o mínimo de 1 para 9.</p>
+    <p><b>Alunos pagantes</b> = total de matriculados menos os bolsistas integrais. Bolsistas parciais continuam contando como pagantes. Os pesos de 1,2 e 1,4 entram só na proporção total; o mínimo de 1 : 9 conta bolsas integrais por unidade.</p>
+    <p>Esta é uma simulação de apoio. Confirme os números com a contabilidade ou assessoria jurídica antes do requerimento ou da renovação do CEBAS.</p>
+  </section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = (n, d=2) => n.toLocaleString('pt-BR', {minimumFractionDigits: Number.isInteger(n)?0:d, maximumFractionDigits: d});
+const num = id => { const v = Math.floor(Number($(id).value)); return Number.isFinite(v) && v > 0 ? v : 0; };
+
+function evaluate(T, I, P, D, Tm, R){
+  const pag = T - I;
+  const eqInt = I + D*0.2 + Tm*0.4;          // integrais ponderadas
+  const eq = eqInt + P/2;                     // equivalente total
+  const ok1 = I*9 >= pag;
+  const ok2 = eq*R >= pag - 1e-9;
+  return {pag, eqInt, eq, ok1, ok2, req1: pag/9, req2: pag/R};
+}
+
+function render(){
+  const T = num('total'), I = num('integrais'), P = num('parciais'), R = Number($('nivel').value);
+  let D = num('defic'), Tm = num('tempo');
+  const err = [];
+  if (I > T) err.push('O número de bolsas integrais não pode passar do total de alunos.');
+  if (I + P > T) err.push('Integrais e parciais somadas passam do total de alunos.');
+  if (D + Tm > I) err.push('As integrais com peso maior devem fazer parte das integrais informadas.');
+  $('err').hidden = !err.length; $('err').textContent = err.join(' ');
+  if (D + Tm > I) { D = 0; Tm = 0; }
+
+  const e = evaluate(T, I, P, D, Tm, R);
+  $('h2').textContent = `Proporção total (1 : ${R})`;
+
+  // Teste 1
+  const need1 = Math.max(0, Math.ceil(e.req1) - I) ;
+  // menor k tal que (I+k)*9 >= T-(I+k)
+  let k1 = 0; while ((I+k1)*9 < T-(I+k1)) k1++;
+  set('p1','b1', e.ok1, e.req1 ? I/e.req1 : 1);
+  $('r1').innerHTML = `${I} <span>de ${fmt(e.req1)} exigidas</span>`;
+  $('t1').innerHTML = e.ok1
+    ? `Cumpre. Sobram <b>${fmt(I - e.req1)}</b> integrais acima do mínimo.`
+    : `Faltam <b>${k1}</b> bolsa${k1>1?'s':''} integral${k1>1?'is':''} para chegar a 1 a cada 9 pagantes.`;
+
+  // Teste 2
+  set('p2','b2', e.ok2, e.req2 ? e.eq/e.req2 : 1);
+  $('r2').innerHTML = `${fmt(e.eq)} <span>de ${fmt(e.req2)} exigidas</span>`;
+  let kp = 0; while ((e.eqInt + (P+kp)/2)*R < e.pag - 1e-9) kp++;
+  let ki = 0; while ((e.eqInt + ki + P/2)*R < (e.pag - ki) - 1e-9) ki++;
+  $('t2').innerHTML = e.ok2
+    ? `Cumpre. Sobram <b>${fmt(e.eq - e.req2)}</b> bolsas equivalentes.`
+    : `Faltam <b>${kp}</b> parciais <i>ou</i> <b>${ki}</b> integrais (integrais também reduzem o número de pagantes).`;
+
+  // Veredito
+  const v = $('verdict'), ok = e.ok1 && e.ok2;
+  v.className = 'verdict ' + (ok ? 'ok' : 'bad');
+  $('vtag').textContent = ok ? 'Enquadra' : 'Não enquadra';
+  $('vtitle').textContent = ok ? 'A instituição atende às proporções do CEBAS' : 'A instituição ainda não atende às proporções';
+  let txt;
+  if (ok) txt = `Com ${e.pag} alunos pagantes, as ${I} integrais e ${P} parciais cumprem o mínimo de 1 : 9 e a proporção de 1 : ${R}.`;
+  else if (!e.ok1 && !e.ok2) txt = `Não cumpre nenhum dos dois testes. Comece pelas integrais: faltam ${k1} para o mínimo de 1 : 9.`;
+  else if (!e.ok1) txt = `A proporção total foi atingida, mas há poucas integrais. Parciais não substituem o mínimo de 1 integral para cada 9 pagantes.`;
+  else txt = `O mínimo de integrais está cumprido. Complete com ${kp} bolsas parciais ou ${ki} integrais.`;
+  $('vtext').textContent = txt;
+
+  // Memória
+  const rows = [
+    ['Total de alunos matriculados', '', T],
+    ['Alunos pagantes', `${T} − ${I} integrais`, e.pag],
+    ['Integrais exigidas no mínimo', `${e.pag} ÷ 9`, fmt(e.req1)],
+    [`Bolsas equivalentes exigidas`, `${e.pag} ÷ ${R}`, fmt(e.req2)],
+    ['Integrais ponderadas', D||Tm ? `${I} + ${D} × 0,2 + ${Tm} × 0,4` : 'sem pesos adicionais', fmt(e.eqInt)],
+    ['Parciais em equivalente integral', `${P} ÷ 2`, fmt(P/2)],
+    ['Bolsas equivalentes concedidas', 'integrais ponderadas + parciais ÷ 2', fmt(e.eq)],
+    ['Proporção atual', 'pagantes por bolsa equivalente', e.eq ? `1 : ${fmt(e.pag/e.eq)}` : '—'],
+  ];
+  $('memo').innerHTML = rows.map(([a,b,c]) => `<tr><td>${a}${b?`<small>${b}</small>`:''}</td><td>${c}</td></tr>`).join('');
+}
+
+function set(pill, bar, ok, frac){
+  $(pill).className = 'pill ' + (ok?'ok':'bad');
+  $(pill).textContent = ok ? 'Cumpre' : 'Não cumpre';
+  $(bar).className = 'bar' + (ok?'':' bad');
+  $(bar).firstElementChild.style.width = Math.min(100, Math.max(0, frac*100)) + '%';
+}
+
+['nivel','total','integrais','parciais','defic','tempo'].forEach(id => $(id).addEventListener('input', render));
+render();
+</script>
+</body>
+</html>
